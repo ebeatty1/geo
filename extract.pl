@@ -11,6 +11,16 @@ use strict; use warnings;
 
 my $extension = ".gif";
 
+# The following variable is equivalent to 128 KiB, the normal size of the Linux system variable
+# MAX_ARG_STRLEN. This and the following variable based on it are used to keep Bash from 
+# giving 'Argument list too long' errors, which result in aborted extractions.
+my $maxlenbytes = 131072;
+
+# The following calculation makes the assumptions that all characters are encoded in UTF-8 at 
+# the max possible size (4 bytes) and that the base command (see below) is 74 characters in length.
+# Base Command: "tar -xf ./geocities-X-Y/geocities-X-Y --skip-old-files -C ./geocities-X-Y "
+my $maxlenchars = int (($maxlenbytes / 4) - 74);
+
 my $usage = "perl extract.pl ./geocities*\n";
 die $usage unless @ARGV;
 
@@ -27,12 +37,31 @@ while (my $directory = shift (@ARGV)) {
         print "This archive contains no $extension\'s\n";
     }
     else {
-        my @splitfilelist = split /^/, $filelist;
-        foreach (@splitfilelist) {
-            $_ =~ s/\n//g;
-            $_ =~ s/ /\\\ /g;
-            system "tar -xf ./$directory/$directory --skip-old-files -C ./$directory $_";
+        $filelist =~ s/ /\\\ /g;
+        $filelist =~ s/\n/ /g;
+        if (length ($filelist) <= $maxlenchars) {
+            print "Extracting $extension\'s with a single command ($maxlenchars > ".length ($filelist).")\n";
+            system "tar -xf ./$directory/$directory --skip-old-files -C ./$directory $filelist";
         }
-        print "Successfully extracted $extension\'s\n";
+        else {
+            print "Extracting $extension\'s with multiple commands ($maxlenchars < ".length ($filelist).")\n";
+            my $listlen = $maxlenchars;
+
+            while (length ($filelist) > $maxlenchars) {
+                my $subfilelist = substr $filelist, 0, $listlen;
+                if ($subfilelist =~ m/\\\ $/) {
+                    $listlen = $listlen - 1;
+                }
+                elsif ($subfilelist =~ m/\s$/) {   
+                    system "tar -xf ./$directory/$directory --skip-old-files -C ./$directory $subfilelist";
+                    $filelist = substr $filelist, $listlen;
+                    $listlen = $maxlenchars;
+                }
+                else {
+                    $listlen = $listlen - 1;
+                }
+            }
+            system "tar -xf ./$directory/$directory --skip-old-files -C ./$directory $filelist";
+        }
     }
 }
