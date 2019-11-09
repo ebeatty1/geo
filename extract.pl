@@ -37,8 +37,16 @@ while (my $directory = shift (@ARGV)) {
         print "This archive contains no $extension\'s\n";
     }
     else {
+        # Escape problematic characters and condense $filelist to a single line
+        $filelist =~ s/\\/\\\\/g;
+        $filelist =~ s/\&/\\\&/g;
+        $filelist =~ s/\(/\\\(/g;
+        $filelist =~ s/\)/\\\)/g;
+        $filelist =~ s/\'/\\\'/g;
+        $filelist =~ s/\$/\\\$/g;
         $filelist =~ s/ /\\\ /g;
         $filelist =~ s/\n/ /g;
+
         if (length ($filelist) <= $maxlenchars) {
             print "Extracting $extension\'s with a single command ($maxlenchars > ".length ($filelist).")\n";
             system "tar -xf ./$directory/$directory --skip-old-files -C ./$directory $filelist";
