@@ -14,7 +14,7 @@ my $directory = shift (@ARGV);
 
 print "Identifying \.$extension\'s\n";
 open my $out, ">", "./list.temp" or die "Can't open list.temp\n";
-print $out `find $directory -type f -regex ".*\.$extension\$"`;
+print $out `find $directory -type f -iregex ".*\.$extension\$"`;
 close $out;
 
 my $filecount = `grep -c -P "\.$extension\$" ./list.temp`;
