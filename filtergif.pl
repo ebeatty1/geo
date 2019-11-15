@@ -14,7 +14,7 @@ system "mkdir -p ./animated && mkdir -p ./static";
 
 print "Identifying \.gif\'s\n";
 open my $out, ">", "./list.temp" or die "Can't open list.temp\n";
-print $out `find $directory -type f -regex ".*\.gif\$"`;
+print $out `find $directory -type f -iregex ".*\.gif\$"`;
 close $out;
 
 my $filecount = `grep -c -P "\.gif\$" ./list.temp`;
